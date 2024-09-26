@@ -1,0 +1,152 @@
+import express, { response } from "express";
+import { EmployeeModel } from "../models/employee_model";
+
+class EmployeeController {
+
+    // Method to get all employees from the database
+    getAllEmployees = async (req : express.Request, res : express.Response) => {
+        try {
+            const employees = await EmployeeModel.find(); // Fetch all employees
+            return res.status(200).json(
+                {data: employees} // Send response with employees data
+            )
+        } catch (error) {
+            return res.status(400).json({
+                message: "Error fetching employees",
+                error: error,
+            }); // Return staus 400 on error
+        }
+    }
+
+    // Method to get a specific employee by ID from the database
+    getEmployee = async (req : express.Request, res : express.Response) => {
+        try {
+            const {id} = req.query; // Get employee ID from query params
+
+            // Check if the ID is provided
+            if (!id) {
+                return res.status(400).json({
+                    message: "Employee ID is required as query parameter"
+                });
+            }
+
+            const employee = await EmployeeModel.findById(id); // Find employee by ID
+            return res.status(200).json({data: employee}) // Send response with employee data
+        } catch (error) {
+            return res.status(400).json({
+                message: "Error fetching employee",
+                error: error,
+            }); // Return staus 400 on error
+        }
+    }
+
+    // Method to create a new employee
+    createEmployee = async (req : express.Request, res : express.Response) => {
+        try {
+            const {name, email, mobile, dob, doj} = req.body; // Get employee details from request body
+
+            // Create a new EmployeeModel instance
+            const employee = new EmployeeModel({
+                name: name,
+                email: email,
+                mobile: mobile,
+                dob: dob,
+                doj: doj
+            });
+
+            // Save the employee to the database
+            const savedEmployee = await employee.save();
+
+            // Respond with the saved employee data
+            return res.status(200).json({
+                message: "Employee created successfully",
+                data: savedEmployee
+            });
+        } catch (error) {
+            return res.status(400).json({
+                message: "Error creating employee",
+                error: error,
+            }); // Return staus 400 on error
+        }
+    }
+
+    // Method to update an existing employee's information
+    updateEmployee = async (req : express.Request, res : express.Response) => {
+        try {
+            const { id } = req.query; // Get the ID from the query parameter
+            const { name, email, mobile, dob, doj } = req.body; // Get updated employee details from request body
+    
+            // Check if the ID is provided
+            if (!id) {
+                return res.status(400).json({
+                    message: "Employee ID is required as query parameter"
+                });
+            }
+
+            const employee = await EmployeeModel.findById(id); // Find employee by ID
+            
+            // If the employee is found, update the fields with new values
+            if(employee) {
+                employee.name = name || employee.name;
+                employee.email = email || employee.email;
+                employee.mobile = mobile || employee.mobile;
+                employee.dob = dob || employee.dob;
+                employee.doj = doj || employee.doj;
+
+                // Save the updated employee back to the database
+                const updatedEmployee = await employee.save();
+
+                // Respond with the updated employee data
+                return res.status(200).json({
+                    message: "Employee updated successfully",
+                    data: updatedEmployee,
+                });
+            } else {
+                // If no employee found, return 404
+                return res.status(404).json({message: "Employee not found"});
+            }
+        } catch (error) {
+            return res.status(400).json({
+                message: "Error updating employee",
+                error: error,
+            });
+        }
+    }
+
+    // Method to delete an employee by ID
+    deleteEmployee = async (req : express.Request, res : express.Response) => {
+        try {
+            const {id} = req.query; // Get employee ID from query params
+
+            // Check if the ID is provided
+            if (!id) {
+                return res.status(400).json({
+                    message: "Employee ID is required as query parameter"
+                });
+            }
+
+            // Find the employee by ID
+            const employee = await EmployeeModel.findById(id);
+
+            // Check if the employee exists
+            if (!employee) {
+                return res.status(404).json({
+                    message: "Employee not found"
+                });
+            }
+
+            // Delete the employee
+            await EmployeeModel.findByIdAndDelete({_id: id});
+
+            return res.status(200).json({message: "Employee deleted"})
+        } catch (error) {
+            return res.status(400).json({
+                message: "Error deleting employee",
+                error: error,
+            }); // Return staus 400 on error
+        }
+    }
+
+}
+
+export default new EmployeeController; 
